@@ -1,0 +1,43 @@
+# Function to get the current CPU usage percentage
+function Get-CpuUsage {
+    $cpuUsage = Get-WmiObject Win32_PerfFormattedData_PerfOS_Processor | Measure-Object -Property PercentProcessorTime -Average | Select-Object -ExpandProperty Average
+    return [math]::Round($cpuUsage, 2)
+}
+
+# Function to get the current RAM usage in percentage
+function Get-RamUsage {
+    $ram = Get-WmiObject Win32_OperatingSystem
+    $totalRam = $ram.TotalVisibleMemorySize
+    $freeRam = $ram.FreePhysicalMemory
+    $usedRam = $totalRam - $freeRam
+    $ramUsagePercentage = ($usedRam / $totalRam) * 100
+    return [math]::Round($ramUsagePercentage, 2)
+}
+
+# Function to get the percentage of storage being used
+function Get-StorageUsage {
+    $drive = Get-WmiObject Win32_LogicalDisk | Where-Object { $_.DriveType -eq 3 } | Select-Object FreeSpace, Size
+    $totalSpace = ($drive | Measure-Object Size -Sum).Sum
+    $usedSpace = ($drive | Measure-Object FreeSpace -Sum).Sum
+    $usedSpacePercentage = ($usedSpace / $totalSpace) * 100
+    return [math]::Round($usedSpacePercentage, 2)
+}
+
+# Get the required information
+$cpuUsage = Get-CpuUsage
+$ramUsage = Get-RamUsage
+$storageUsage = Get-StorageUsage
+
+# Create an object to store the information
+$usageInfo = [PSCustomObject]@{
+    "Timestamp" = Get-Date
+    "CPU Usage (%)" = $cpuUsage
+    "RAM Usage (%)" = $ramUsage
+    "Storage Usage (%)" = $storageUsage
+}
+
+# Create the CSV file in C:\temp\
+$csvPath = "C:\temp\DeviceUsage.csv"
+$usageInfo | Export-Csv -Path $csvPath -NoTypeInformation
+
+Write-Host "Device usage information has been gathered and saved to: $csvPath"
