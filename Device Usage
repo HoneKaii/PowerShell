@@ -23,24 +23,32 @@ function Get-RamUsage {
 
 
 function Get-StorageUsage {
-    $drive = Get-WmiObject Win32_LogicalDisk | Where-Object { $_.DriveType -eq 3 } | Select-Object FreeSpace, Size
-    $totalSpace = ($drive | Measure-Object Size -Sum).Sum * 1KB  # Convert to bytes
-    $usedSpace = ($drive | Measure-Object FreeSpace -Sum).Sum * 1KB  # Convert to bytes
-    $freeSpace = $totalSpace - $usedSpace
+    $drives = Get-WmiObject Win32_LogicalDisk | Where-Object { $_.DriveType -eq 3 }
 
-    $usedSpacePercentage = ($usedSpace / $totalSpace) * 100
-    $freeSpacePercentage = 100 - $usedSpacePercentage
+    $usageInfo = foreach ($drive in $drives) {
+        $totalSpace = $drive.Size
+        $freeSpace = $drive.FreeSpace
+        $usedSpace = $totalSpace - $freeSpace
 
-    $usedSpaceGB = $usedSpace / 1GB
-    $totalSpaceGB = $totalSpace / 1GB
+        $usedSpacePercentage = ($usedSpace / $totalSpace) * 100
+        $freeSpacePercentage = 100 - $usedSpacePercentage
 
-    @{
-        "UsedSpacePercentage" = [math]::Round($usedSpacePercentage, 2)
-        "FreeSpacePercentage" = [math]::Round($freeSpacePercentage, 2)
-        "FreeSpaceGB" = [math]::Round($freeSpaceGB, 2)
-        "TotalSpaceGB" = [math]::Round($totalSpaceGB, 2)
+        $usedSpaceGB = $usedSpace / 1GB
+        $freeSpaceGB = $freeSpace / 1GB
+        $totalSpaceGB = $totalSpace / 1GB
+
+        @{
+            "Drive" = $drive.DeviceID
+            "UsedSpacePercentage" = [math]::Round($usedSpacePercentage, 2)
+            "FreeSpacePercentage" = [math]::Round($freeSpacePercentage, 2)
+            "FreeSpaceGB" = [math]::Round($freeSpaceGB, 2)
+            "TotalSpaceGB" = [math]::Round($totalSpaceGB, 2)
+        }
     }
+
+    return $usageInfo
 }
+
 
 
 function Add-WordText {
