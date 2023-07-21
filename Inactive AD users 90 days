@@ -1,0 +1,46 @@
+# Set the output file path
+$outputFilePath = "C:\temp\InactiveUsersReport.docx"
+
+# Set the number of days for considering a user dormant
+$dormantDays = 90
+
+# Get the current date
+$today = Get-Date
+
+# Calculate the date threshold for inactive users
+$dateThreshold = $today.AddDays(-$dormantDays)
+
+# Query Active Directory for inactive users
+$inactiveUsers = Get-ADUser -Filter {LastLogonTimeStamp -lt $dateThreshold} -Properties LastLogonTimeStamp, Enabled | Where-Object { $_.Enabled -eq $true }
+
+# Load the Word COM object
+$word = New-Object -ComObject Word.Application
+
+# Create a new document
+$document = $word.Documents.Add()
+
+# Set the title and headers
+$title = "Inactive Users Report (Last Logon: $dormantDays or More Days Ago)"
+$table = $document.Tables.Add($document.Range(), 1, 3)
+$table.Cell(1, 1).Range.Text = $title
+$table.Cell(1, 2).Range.Text = "User Name"
+$table.Cell(1, 3).Range.Text = "Last Logon"
+
+# Populate the table with user data
+$row = 2
+foreach ($user in $inactiveUsers) {
+    $lastLogon = [DateTime]::FromFileTime($user.LastLogonTimeStamp)
+    $daysAgo = ($today - $lastLogon).Days
+    $table.Cell($row, 2).Range.Text = $user.SamAccountName
+    $table.Cell($row, 3).Range.Text = "$daysAgo days ago"
+    $row++
+}
+
+# Save and close the document
+$document.SaveAs($outputFilePath)
+$document.Close()
+
+# Close the Word application
+$word.Quit()
+
+Write-Host "Inactive Users report has been generated and saved to $outputFilePath."
