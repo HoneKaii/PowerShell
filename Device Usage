@@ -4,14 +4,18 @@ function Get-CpuUsage {
     return [math]::Round($cpuUsage, 2)
 }
 
-# Function to get the current RAM usage in percentage
+# Function to get the current RAM usage in percentage and bytes
 function Get-RamUsage {
     $ram = Get-WmiObject Win32_OperatingSystem
     $totalRam = $ram.TotalVisibleMemorySize
     $freeRam = $ram.FreePhysicalMemory
     $usedRam = $totalRam - $freeRam
     $ramUsagePercentage = ($usedRam / $totalRam) * 100
-    return [math]::Round($ramUsagePercentage, 2)
+
+    return @{
+        "UsagePercentage" = [math]::Round($ramUsagePercentage, 2)
+        "UsedMemoryBytes" = $usedRam
+    }
 }
 
 # Function to get the percentage of storage being used
@@ -19,21 +23,33 @@ function Get-StorageUsage {
     $drive = Get-WmiObject Win32_LogicalDisk | Where-Object { $_.DriveType -eq 3 } | Select-Object FreeSpace, Size
     $totalSpace = ($drive | Measure-Object Size -Sum).Sum
     $usedSpace = ($drive | Measure-Object FreeSpace -Sum).Sum
+    $freeSpace = $totalSpace - $usedSpace
+
     $usedSpacePercentage = ($usedSpace / $totalSpace) * 100
-    return [math]::Round($usedSpacePercentage, 2)
+    $freeSpacePercentage = 100 - $usedSpacePercentage
+
+    return @{
+        "UsedSpacePercentage" = [math]::Round($usedSpacePercentage, 2)
+        "FreeSpacePercentage" = [math]::Round($freeSpacePercentage, 2)
+    }
 }
 
 # Get the required information
 $cpuUsage = Get-CpuUsage
-$ramUsage = Get-RamUsage
+$ramInfo = Get-RamUsage
+$ramUsagePercentage = $ramInfo.UsagePercentage
+$usedRamBytes = $ramInfo.UsedMemoryBytes / 1MB  # Convert used memory from bytes to MB
+
 $storageUsage = Get-StorageUsage
 
 # Create an object to store the information
 $usageInfo = [PSCustomObject]@{
     "Timestamp" = Get-Date
     "CPU Usage (%)" = $cpuUsage
-    "RAM Usage (%)" = $ramUsage
-    "Storage Usage (%)" = $storageUsage
+    "RAM Usage (%)" = $ramUsagePercentage
+    "Used RAM (MB)" = [math]::Round($usedRamBytes, 2)
+    "Storage Usage (%)" = $storageUsage.UsedSpacePercentage
+    "Free Storage (%)" = $storageUsage.FreeSpacePercentage
 }
 
 # Create the CSV file in C:\temp\
