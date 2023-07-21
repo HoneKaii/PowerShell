@@ -1,59 +1,102 @@
-# Function to get the current CPU usage percentage
 function Get-CpuUsage {
-    $cpuUsage = Get-WmiObject Win32_PerfFormattedData_PerfOS_Processor | Measure-Object -Property PercentProcessorTime -Average | Select-Object -ExpandProperty Average
-    return [math]::Round($cpuUsage, 2)
+    $cpuCounter = Get-Counter '\Processor(_Total)\% Processor Time'
+    [math]::Round($cpuCounter.CounterSamples[0].CookedValue, 2)
 }
 
-# Function to get the current RAM usage in percentage and bytes
 function Get-RamUsage {
     $ram = Get-WmiObject Win32_OperatingSystem
-    $totalRam = $ram.TotalVisibleMemorySize
-    $freeRam = $ram.FreePhysicalMemory
+    $totalRam = $ram.TotalVisibleMemorySize * 1KB  # Convert to bytes
+    $freeRam = $ram.FreePhysicalMemory * 1KB  # Convert to bytes
     $usedRam = $totalRam - $freeRam
     $ramUsagePercentage = ($usedRam / $totalRam) * 100
 
-    return @{
+    $usedRamGB = $usedRam / 1GB
+    $totalRamGB = $totalRam / 1GB
+
+    @{
         "UsagePercentage" = [math]::Round($ramUsagePercentage, 2)
         "UsedMemoryBytes" = $usedRam
+        "UsedMemoryGB" = [math]::Round($usedRamGB, 2)
+        "TotalMemoryGB" = [math]::Round($totalRamGB, 2)
     }
 }
 
-# Function to get the percentage of storage being used
+
 function Get-StorageUsage {
     $drive = Get-WmiObject Win32_LogicalDisk | Where-Object { $_.DriveType -eq 3 } | Select-Object FreeSpace, Size
-    $totalSpace = ($drive | Measure-Object Size -Sum).Sum
-    $usedSpace = ($drive | Measure-Object FreeSpace -Sum).Sum
+    $totalSpace = ($drive | Measure-Object Size -Sum).Sum * 1KB  # Convert to bytes
+    $usedSpace = ($drive | Measure-Object FreeSpace -Sum).Sum * 1KB  # Convert to bytes
     $freeSpace = $totalSpace - $usedSpace
 
     $usedSpacePercentage = ($usedSpace / $totalSpace) * 100
     $freeSpacePercentage = 100 - $usedSpacePercentage
 
-    return @{
+    $usedSpaceGB = $usedSpace / 1GB
+    $totalSpaceGB = $totalSpace / 1GB
+
+    @{
         "UsedSpacePercentage" = [math]::Round($usedSpacePercentage, 2)
         "FreeSpacePercentage" = [math]::Round($freeSpacePercentage, 2)
+        "FreeSpaceGB" = [math]::Round($freeSpaceGB, 2)
+        "TotalSpaceGB" = [math]::Round($totalSpaceGB, 2)
     }
 }
 
-# Get the required information
+
+function Add-WordText {
+    param(
+        [Parameter(Mandatory = $true)]
+        [Microsoft.Office.Interop.Word.Document] $Document,
+
+        [Parameter(Mandatory = $true)]
+        [string] $Text,
+
+        [Parameter()]
+        [int] $FontSize = 12,
+
+        [Parameter()]
+        [switch] $Bold
+    )
+
+    $selection = $Document.Application.Selection
+    $selection.Font.Bold = $Bold
+    $selection.Font.Size = $FontSize
+    $selection.TypeText($Text)
+    $selection.TypeParagraph()
+}
+
+# Main script
+$wordDocPath = "C:\temp\DeviceUsage.docx"
+
+# Get device usage information
 $cpuUsage = Get-CpuUsage
 $ramInfo = Get-RamUsage
 $ramUsagePercentage = $ramInfo.UsagePercentage
-$usedRamBytes = $ramInfo.UsedMemoryBytes / 1MB  # Convert used memory from bytes to MB
-
+$usedRamGB = $ramInfo.UsedMemoryGB
+$totalRamGB = $ramInfo.TotalMemoryGB
 $storageUsage = Get-StorageUsage
 
-# Create an object to store the information
-$usageInfo = [PSCustomObject]@{
-    "Timestamp" = Get-Date
-    "CPU Usage (%)" = $cpuUsage
-    "RAM Usage (%)" = $ramUsagePercentage
-    "Used RAM (MB)" = [math]::Round($usedRamBytes, 2)
-    "Storage Usage (%)" = $storageUsage.UsedSpacePercentage
-    "Free Storage (%)" = $storageUsage.FreeSpacePercentage
-}
+# Create and populate the Word document
+$wordApp = New-Object -ComObject Word.Application
+$doc = $wordApp.Documents.Add()
 
-# Create the CSV file in C:\temp\
-$csvPath = "C:\temp\DeviceUsage.csv"
-$usageInfo | Export-Csv -Path $csvPath -NoTypeInformation
+Add-WordText -Document $doc -Text "Device Usage Information" -FontSize 20 -Bold
+Add-WordText -Document $doc -Text "Timestamp: $(Get-Date)" -FontSize 12
+Add-WordText -Document $doc -Text "CPU Usage (%): $cpuUsage" -FontSize 12
 
-Write-Host "Device usage information has been gathered and saved to: $csvPath"
+$ramUsageText = "RAM Usage (%): $ramUsagePercentage or $usedRamGB GB's used of $totalRamGB GB's"
+Add-WordText -Document $doc -Text $ramUsageText -FontSize 12
+
+$storageUsageText = "Storage Usage (%): $($storageUsage.UsedSpacePercentage) or $($storageUsage.FreeSpaceGB) GB's free of $($storageUsage.TotalSpaceGB) GB's"
+Add-WordText -Document $doc -Text $storageUsageText -FontSize 12
+
+# Save the Word document and close Word application
+$doc.SaveAs([ref]$wordDocPath)
+$doc.Close()
+$wordApp.Quit()
+
+# Release resources
+[System.Runtime.Interopservices.Marshal]::ReleaseComObject($wordApp) | Out-Null
+Remove-Variable wordApp
+
+Write-Host "Device usage information has been gathered and saved to: $wordDocPath"
