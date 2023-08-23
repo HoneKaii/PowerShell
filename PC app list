@@ -1,0 +1,24 @@
+# Install ImportExcel module if not already installed
+Install-Module -Name ImportExcel -Scope CurrentUser -Force
+
+# Get the WMI objects
+$products = Get-WmiObject -Class Win32_Product | Select-Object Name, Version
+
+# Create an empty array to store data
+$excelData = @()
+
+# Populate the data array
+foreach ($product in $products) {
+    $excelData += [PSCustomObject]@{
+        'Name'    = $product.Name
+        'Version' = $product.Version
+    }
+}
+
+# Define the path and file name for the Excel file
+$excelFilePath = "C:\temp\PC App List.xlsx"
+
+# Export data to Excel
+$excelData | Export-Excel -Path $excelFilePath -AutoSize -AutoFilter
+
+Write-Host "Excel data saved to: $excelFilePath"
