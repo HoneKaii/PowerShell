@@ -25,6 +25,7 @@ $appsToRemove = @(
     "AD2F1837.myHP"
     "Microsoft.Windows.ParentalControls"
     "Microsoft.WindowsFeedbackHub"
+    "Microsoft.GetHelp"
     
 )
 
