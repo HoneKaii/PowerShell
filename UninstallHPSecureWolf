@@ -1,0 +1,4 @@
+#HP Wolf Security - Console 
+msiexec.exe /x "c:\windows\installer\ae6f8.msi"
+#HP Wolf Security
+msiexec.exe /x "C:\Windows\Installer\b49f8.msi"
