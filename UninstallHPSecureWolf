@@ -1,38 +1,23 @@
 #The following script uninstalls HP secure wolf & Sure apps from windows installer MSI files.
-#Re-run the script untill all apps have been removed. 
+#Added hashtable to clean things up.
 
-#HPSureRun
-$appPath = "c:\windows\installer\a88ea.msi"
-if (Test-Path $appPath) {
-    Write-Host "Uninstalling HPSureRun..."
-    msiexec.exe /x "$appPath"
-} else {
-    Write-Host "HPSureRun is not installed. Skipping..."
+# Define a hash table with app names as keys and MSI paths as values
+$apps = @{
+    'HPSureRun'           = 'c:\windows\installer\a88ea.msi'
+    'HPSureRecovery'      = 'c:\windows\installer\a5a96.msi'
+    'HPWolfSecurity'      = 'C:\Windows\Installer\b49f8.msi'
+    'HPWolfSecurityConsole' = 'c:\windows\installer\ae6f8.msi'
 }
 
-#HPSureRecovery
-$appPath = "c:\windows\installer\a5a96.msi"
-if (Test-Path $appPath) {
-    Write-Host "Uninstalling HPSureRecovery..."
-    msiexec.exe /x "$appPath"
-} else {
-    Write-Host "HPSureRecovery is not installed. Skipping..."
+# Iterate through the hash table
+foreach ($appName in $apps.Keys) {
+    $appPath = $apps[$appName]
+    
+    if (Test-Path $appPath) {
+        Write-Host "Uninstalling $appName..."
+        msiexec.exe /x "$appPath"
+    } else {
+        Write-Host "$appName is not installed. Skipping..."
+    }
 }
 
-#HP Wolf Security
-$appPath = "C:\Windows\Installer\b49f8.msi"
-if (Test-Path $appPath) {
-    Write-Host "Uninstalling HP Wolf Security..."
-    msiexec.exe /x "$appPath"
-} else {
-    Write-Host "HP Wolf Security is not installed. Skipping..."
-}
-
-#HP Wolf Security - Console 
-$appPath = "c:\windows\installer\ae6f8.msi"
-if (Test-Path $appPath) {
-    Write-Host "Uninstalling HP Wolf Security - Console..."
-    msiexec.exe /x "$appPath"
-} else {
-    Write-Host "HP Wolf Security - Console is not installed. Skipping..."
-}
