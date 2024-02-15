@@ -19,6 +19,9 @@ $appsToRemove = @(
     "Microsoft.Windows.ParentalControls"
     "Microsoft.WindowsFeedbackHub"
     "Microsoft.GetHelp"
+    "Microsoft.ZuneMusic"                       
+    "Microsoft.ZuneVideo"
+    "Microsoft.XboxSpeechToTextOverlay"
     
 )
 
