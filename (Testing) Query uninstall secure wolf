@@ -1,0 +1,17 @@
+$appName = "HP Sure Recover"
+
+# Get the product code using the display name
+$productCode = (Get-WmiObject -Query "SELECT * FROM Win32_Product WHERE Name='$appName'").IdentifyingNumber
+
+if ($productCode) {
+    # Query the Windows Installer database for the MSI location using the product code
+    $msiLocation = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{$productCode}").InstallLocation
+
+    if ($msiLocation) {
+        Write-Host "MSI location for $appName: $msiLocation"
+    } else {
+        Write-Host "MSI location not found for $appName."
+    }
+} else {
+    Write-Host "$appName not found in installed programs."
+}

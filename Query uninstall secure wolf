@@ -1,9 +1,0 @@
-$appName = "HP Sure Recover"
-$installedApps = Get-WmiObject -Class Win32_Product | Where-Object { $_.Name -eq $appName }
-
-if ($installedApps) {
-    $msiPath = $installedApps.InstallLocation
-    # Use $msiPath to run your script or perform other operations
-} else {
-    Write-Host "Application not found."
-}
