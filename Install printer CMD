@@ -1,0 +1,2 @@
+#Install printer from CMD as admin
+Rundll32.exe shell32.dll,SHHelpShortcuts_RunDLL AddPrinter
