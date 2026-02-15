@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Live US Stock Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="page-header">
+    <h1>Live US Stock Dashboard</h1>
+    <p class="subtitle">Track stocks, US market hours, and upcoming trading days.</p>
+  </header>
+
+  <main class="dashboard-grid">
+    <section class="card" id="stocks-section" aria-labelledby="stocks-title">
+      <div class="card-header">
+        <h2 id="stocks-title">Stock Prices</h2>
+        <button id="refresh-stocks" type="button">Refresh</button>
+      </div>
+
+      <p class="card-help">
+        Symbols are configurable in <code>app.js</code>. Western Digital (<strong>WDC</strong>) is included by default.
+      </p>
+
+      <div id="stocks-error" class="status-message error hidden" role="alert"></div>
+      <div id="stocks-loading" class="status-message">Loading latest prices…</div>
+
+      <div class="table-wrapper">
+        <table id="stocks-table" class="hidden">
+          <thead>
+            <tr>
+              <th>Symbol</th>
+              <th>Price (USD)</th>
+              <th>Daily Change</th>
+              <th>Last Update (Local)</th>
+            </tr>
+          </thead>
+          <tbody id="stocks-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card" id="clocks-section" aria-labelledby="clocks-title">
+      <h2 id="clocks-title">Market Hours Clock</h2>
+      <div class="clock-grid">
+        <div class="clock-box">
+          <h3>US Eastern Time (ET)</h3>
+          <p id="et-time" class="clock-time">--:--:--</p>
+          <p id="market-status" class="market-pill">Checking market status…</p>
+          <p id="market-countdown" class="muted">Countdown: --</p>
+        </div>
+        <div class="clock-box">
+          <h3>New Zealand Time (NZT)</h3>
+          <p id="nzt-time" class="clock-time">--:--:--</p>
+          <p class="muted">Timezone: Pacific/Auckland</p>
+        </div>
+      </div>
+      <p class="card-help">
+        Regular US session used for status: <strong>9:30 AM – 4:00 PM ET</strong> (Monday-Friday, excluding holidays).
+      </p>
+    </section>
+
+    <section class="card" id="calendar-section" aria-labelledby="calendar-title">
+      <h2 id="calendar-title">US Market Calendar</h2>
+      <div id="calendar-loading" class="status-message">Loading holiday/trading calendar…</div>
+      <div id="calendar-error" class="status-message error hidden" role="alert"></div>
+      <div id="today-market-status" class="today-status">Today: --</div>
+      <ul id="trading-days-list" class="trading-days"></ul>
+      <p class="card-help">
+        Calendar uses US federal holiday data as a free approximation for major market holidays and computes the next trading days by skipping weekends + holidays.
+      </p>
+    </section>
+  </main>
+
+  <!--
+    GitHub Pages deployment notes:
+    1) Push this folder to a repository (for example, in repo root).
+    2) In GitHub: Settings > Pages > Build and deployment > Source: Deploy from a branch.
+    3) Choose your branch (for example, main) and folder (/root or /docs), then Save.
+    4) If this folder is in /docs, set Pages folder to /docs.
+  -->
+  <script src="app.js" defer></script>
+</body>
+</html>
